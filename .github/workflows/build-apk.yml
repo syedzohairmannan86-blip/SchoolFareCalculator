@@ -25,11 +25,6 @@ jobs:
       - name: Find Android SDK
         run: |
           echo "ANDROID_HOME=$ANDROID_HOME"
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
-          find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f 2>/dev/null || true
-
-      - name: Install Android SDK packages
-        run: |
           SDKMANAGER=$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f | head -1)
           echo "Using SDK manager: $SDKMANAGER"
           yes | "$SDKMANAGER" --licenses || true
@@ -42,6 +37,37 @@ jobs:
         run: |
           mkdir project
           unzip -q SchoolFareCalculator_PhoneOnly_AutoBuild.zip -d project
+
+      - name: Fix Android project dependencies and resources
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          root = Path("project")
+          
+          # Fix duplicate Kotlin JDK 7/JDK 8 classes
+          build_file = root / "build.gradle"
+          text = build_file.read_text()
+          text += '''
+          
+          allprojects {
+              configurations.configureEach {
+                  exclude group: "org.jetbrains.kotlin", module: "kotlin-stdlib-jdk7"
+                  exclude group: "org.jetbrains.kotlin", module: "kotlin-stdlib-jdk8"
+              }
+          }
+          '''
+          build_file.write_text(text)
+
+          # Add missing black color
+          colors = root / "app/src/main/res/values/colors.xml"
+          text = colors.read_text()
+          text = text.replace(
+              '</resources>',
+              '    <color name="black">#000000</color>\\n</resources>'
+          )
+          colors.write_text(text)
+          PY
 
       - name: Build debug APK
         working-directory: project
