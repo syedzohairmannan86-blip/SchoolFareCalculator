@@ -22,11 +22,9 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Find Android SDK
+      - name: Install Android SDK packages
         run: |
-          echo "ANDROID_HOME=$ANDROID_HOME"
           SDKMANAGER=$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f | head -1)
-          echo "Using SDK manager: $SDKMANAGER"
           yes | "$SDKMANAGER" --licenses || true
           "$SDKMANAGER" "platforms;android-35" "build-tools;35.0.0"
 
@@ -38,18 +36,51 @@ jobs:
           mkdir project
           unzip -q SchoolFareCalculator_PhoneOnly_AutoBuild.zip -d project
 
-      - name: Fix Android project dependencies and resources
+      - name: Fix Android project
         run: |
           python3 - <<'PY'
           from pathlib import Path
 
           root = Path("project")
-          
-          # Fix duplicate Kotlin JDK 7/JDK 8 classes
+
+          # Fix icon location
+          drawable = root / "app/src/main/res/drawable"
+          drawable.mkdir(parents=True, exist_ok=True)
+
+          old_icon = root / "app/src/main/res/drawable_icon.xml"
+          new_icon = drawable / "drawable_icon.xml"
+
+          if old_icon.exists():
+              old_icon.rename(new_icon)
+
+          # Fix theme name
+          themes = root / "app/src/main/res/values/themes.xml"
+          text = themes.read_text()
+          text = text.replace(
+              'name="Theme.SchoolFare"',
+              'name="Theme.SchoolFareCalculator"'
+          )
+          themes.write_text(text)
+
+          # Add missing black color
+          colors = root / "app/src/main/res/values/colors.xml"
+          text = colors.read_text()
+
+          if 'name="black"' not in text:
+              text = text.replace(
+                  '</resources>',
+                  '    <color name="black">#000000</color>\n</resources>'
+              )
+
+          colors.write_text(text)
+
+          # Remove conflicting old Kotlin JDK dependencies
           build_file = root / "build.gradle"
           text = build_file.read_text()
-          text += '''
-          
+
+          if 'kotlin-stdlib-jdk7' not in text:
+              text += '''
+
           allprojects {
               configurations.configureEach {
                   exclude group: "org.jetbrains.kotlin", module: "kotlin-stdlib-jdk7"
@@ -57,16 +88,8 @@ jobs:
               }
           }
           '''
-          build_file.write_text(text)
 
-          # Add missing black color
-          colors = root / "app/src/main/res/values/colors.xml"
-          text = colors.read_text()
-          text = text.replace(
-              '</resources>',
-              '    <color name="black">#000000</color>\\n</resources>'
-          )
-          colors.write_text(text)
+          build_file.write_text(text)
           PY
 
       - name: Build debug APK
