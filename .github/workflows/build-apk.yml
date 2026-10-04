@@ -34,8 +34,7 @@ jobs:
       - name: Extract Android project
         run: |
           mkdir project
-          unzip -q SchoolFareCalculator_DarkEdition_v2.zip -d project
-
+          unzip -q SchoolFareCalculator_DarkEdition_v3_Landscape.zip -d project
       - name: Fix Android project
         run: |
           python3 - <<'PY'
