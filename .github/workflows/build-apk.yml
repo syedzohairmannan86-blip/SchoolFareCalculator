@@ -34,7 +34,7 @@ jobs:
       - name: Extract Android project
         run: |
           mkdir project
-          unzip -q SchoolFareCalculator_PhoneOnly_AutoBuild.zip -d project
+          unzip -q SchoolFareCalculator_DarkEdition_v2.zip -d project
 
       - name: Fix Android project
         run: |
