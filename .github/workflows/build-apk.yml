@@ -34,7 +34,7 @@ jobs:
       - name: Extract Android project
         run: |
           mkdir project
-          unzip SchoolFareCalculator_v10_SettingsFixed_ImportExport.zip
+          unzip SchoolFareCalculator_v10_SettingsFixed_ImportExport.zip -d project
       - name: Fix Android project
         run: |
           python3 - <<'PY'
