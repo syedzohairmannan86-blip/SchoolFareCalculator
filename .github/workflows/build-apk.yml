@@ -34,7 +34,7 @@ jobs:
       - name: Extract Android project
         run: |
           mkdir project
-          unzip SchoolFareCalculator_v13_NextLevelMotion.zip -d project
+          unzip SchoolFareCalculator_v15_ColorfulDashboard_Vehicle.zip -d project
       - name: Fix Android project
         run: |
           python3 - <<'PY'
